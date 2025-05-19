@@ -61,13 +61,15 @@ Upon re-reading the scenario, I realized that the core focus wasn't on validatin
 1. Account Tenure: I measured the number of months each customer has been active by calculating the difference between the current date and their account creation date (created_on).
 2. Aggregate Transaction Data: I counted the total number of transactions per customer from the savings transactions table and summed the total transaction value (confirmed_amount) per customer to capture their overall transaction volume.
 3. Calculate Average Profit per Transaction: I assumed a profit margin of 0.1% per transaction(as per the assessment), so I computed the average profit per transaction by multiplying the total transaction value by 0.001 and dividing by the total number of transactions.
+4. Estimated CLV: I calculated the CLV using the assumption provided:
+   
    ```math
    \text{CLV} = \left(\frac{\text{Total Transactions}}{\text{Tenure}}\right) \times 12 \times \text{Avg Profit per Transaction}
 
 #### Challenges
 Identifying the Correct Date for Tenure Calculation While calculating account tenure, I noticed two fields in the dataset: date_joined and created_on. To ensure accuracy, I checked whether these dates were identical or if one better represented the user's actual account start date.
 
-#### ***Solution:*** I ran a query to compare the two dates to check for discrepancies. I settled on using date_joined
+#### ***Solution:*** I ran a query to compare the two dates to check for discrepancies. I settled on using date_joined.
 
 
 

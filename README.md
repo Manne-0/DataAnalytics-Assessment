@@ -45,8 +45,7 @@ This approach ensures that accounts with no transactions at all are not excluded
 #### Challenges:
 1. Handling Accounts with No Transactions
 One of the key challenges encountered was accurately identifying accounts that had no inflow transactions in the last 365 days — including those that have never had a transaction at all. Using an INNER JOIN would have excluded these accounts entirely, which would violate the requirement to flag all inactive accounts, even newly created or dormant ones. were used.
-#### ***Solution:***
-To overcome this, a LEFT JOIN was used between plans_plan and savings_savingsaccount, allowing inclusion of all active accounts regardless of transaction history. This approach ensures that accounts with NULL values for transaction_date (i.e., no transactions) are still returned. A conditional logic (CASE) was then applied to treat these NULL transaction dates as inactive by default — assigning them a placeholder inactivity period (e.g., 9999) to ensure they're captured in the > 365 days filter.
+#### ***Solution:*** To overcome this, a LEFT JOIN was used between plans_plan and savings_savingsaccount, allowing inclusion of all active accounts regardless of transaction history. This approach ensures that accounts with NULL values for transaction_date (i.e., no transactions) are still returned. A conditional logic (CASE) was then applied to treat these NULL transaction dates as inactive by default — assigning them a placeholder inactivity period (e.g., 9999) to ensure they're captured in the > 365 days filter.
 
 2. Handling Transaction Status Uncertainty
 While analyzing the savings_savingsaccount table, I noticed that it contained various transaction statuses, including failed or ambiguous ones, which raised the question: Should failed or unconfirmed transactions be included when determining account activity?
@@ -54,9 +53,22 @@ While analyzing the savings_savingsaccount table, I noticed that it contained va
 Since the assessment didn't specify filtering by transaction status, I initially considered excluding transactions that didn't have a clear "success" status. To ensure I was only analyzing actual inflows, I applied a filter: confirmed_amount > 0.
 ##### Re-evaluating the Business Logic:
 Upon re-reading the scenario, I realized that the core focus wasn't on validating transactions, but rather on detecting inactivity that is, accounts with no transaction activity (regardless of transaction status or amount).
-##### Final Decision:
-To align with the intent of the assessment, I removed the confirmed_amount > 0 filter and focused solely on transaction_date. This ensures that I capture all transaction attempts and accurately flag accounts with no inflow activity in the last 365 days — regardless of whether the transaction was marked as successful or failed.
+##### Final Decision: To align with the intent of the assessment, I removed the confirmed_amount > 0 filter and focused solely on transaction_date. This ensures that I capture all transaction attempts and accurately flag accounts with no inflow activity in the last 365 days — regardless of whether the transaction was marked as successful or failed.
 
+
+## Assessment Q4 - Customer Lifetime Value (CLV) Estimation
+#### Aproach
+1. Account Tenure: I measured the number of months each customer has been active by calculating the difference between the current date and their account creation date (created_on).
+2. Aggregate Transaction Data: I counted the total number of transactions per customer from the savings transactions table and summed the total transaction value (confirmed_amount) per customer to capture their overall transaction volume.
+3. Calculate Average Profit per Transaction: I assumed a profit margin of 0.1% per transaction(as per the assessment), so I computed the average profit per transaction by multiplying the total transaction value by 0.001 and dividing by the total number of transactions.
+   
+   \text{CLV} = \left(\frac{\text{Total Transactions}}{\text{Tenure}}\right) \times 12 \times \text{Avg Profit per Transaction}
+]
+
+#### Challenges
+Identifying the Correct Date for Tenure Calculation While calculating account tenure, I noticed two fields in the dataset: date_joined and created_on. To ensure accuracy, I checked whether these dates were identical or if one better represented the user's actual account start date.
+
+#### ***Solution:*** I ran a query to compare the two dates to check for discrepancies. I settled on using date_joined
 
 
 

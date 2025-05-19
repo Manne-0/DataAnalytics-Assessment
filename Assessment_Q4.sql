@@ -1,32 +1,24 @@
 select
-	id as customer_id,
-	name,
-	tenure,
-	sum(trans_cnt) total_transactions,
-	round(((trans_cnt / tenure) * 12 * avg_profit_per_transaction)/ 100, 2) estimated_clv /*divides by 100 to convert to naira*/
+	uc.id as customer_id,
+	CONCAT(uc.first_name, ' ', uc.last_name) as name,
+	ROUND(DATEDIFF(CURDATE(), uc.date_joined) / 30) as tenure_months,
+	COUNT(ss.transaction_reference) as total_transactions,
+	ROUND(
+        (
+            (COUNT(ss.transaction_reference) / nullif(ROUND(DATEDIFF(CURDATE(), uc.date_joined) / 30), 0)) 
+            * 12 
+            * (SUM(0.001 * ss.confirmed_amount) / nullif(COUNT(ss.transaction_reference), 0))
+        ) / 100,      /*converts amount to Naira*/
+    2) as estimated_clv
 from
-	(
-	select
-		uc.id,
-		uc.created_on,
-		CONCAT(uc.first_name , ' ', uc.last_name)name,
-		round(DATEDIFF(CURDATE(), uc.created_on )/ 30) as tenure,
-		count(ss.transaction_reference) trans_cnt,
-		ss.confirmed_amount,
-		sum(0.001 * ss.confirmed_amount)/ count(ss.transaction_reference) avg_profit_per_transaction  
-	from
-		users_customuser uc
-	left join savings_savingsaccount ss 
-on
-		uc.id = ss.owner_id
-	group by
-		uc.id,
-		uc.created_on,
-		name,
-		ss.confirmed_amount) a
+	users_customuser uc
+left join savings_savingsaccount ss 
+    on
+	uc.id = ss.owner_id
 group by
-	id,
-	name,
-	tenure
+	uc.id,
+	uc.first_name,
+	uc.last_name,
+	uc.date_joined
 order by
-	5 desc
+	estimated_clv desc;

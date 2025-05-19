@@ -1,38 +1,35 @@
 select
-	distinct id,
+	id,
 	owner_id,
 	last_transaction_date,
-	DATEDIFF(CURDATE(), last_transaction_date) inactivity_days
+	DATEDIFF(CURDATE(), last_transaction_date) as inactivity_days
 from
 	(
 	select
 		pp.id,
 		pp.owner_id,
-		is_a_fund ,
-		is_regular_savings ,
-		max(ss.transaction_date) last_transaction_date,
+		pp.is_a_fund,
+		pp.is_regular_savings,
+		coalesce(cast(MAX(ss.transaction_date) as date), '1900-01-01') as last_transaction_date,
 		case
-			when is_a_fund = 1 then 'Investment'
+			when pp.is_a_fund = 1 then 'Investment'
 			when pp.is_regular_savings = 1 then 'Savings'
 		end as type
-		-- , ss.confirmed_amount, ss.transaction_date
 	from
 		plans_plan pp
 	left join savings_savingsaccount ss 
-on
+        on
 		pp.id = ss.plan_id
 	where
-		(pp.is_a_fund = 1
-			or is_regular_savings = 1)
+		pp.is_a_fund = 1
+		or pp.is_regular_savings = 1
 	group by
 		pp.id,
 		pp.owner_id,
-		is_a_fund,
-		is_regular_savings,
-		type
-		-- and ss.confirmed_amount != 0 /*takes out potential failed transaction*/
-)a
+		pp.is_a_fund,
+		pp.is_regular_savings
+) as account_activity
 having
 	inactivity_days > 365
 order by
-	a.last_transaction_date desc
+	last_transaction_date desc;
